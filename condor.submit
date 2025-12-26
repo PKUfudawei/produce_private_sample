@@ -17,7 +17,7 @@ Arguments = 3000
 # Setting the should_transfer_files command explicitly enables 
 # or disables the file transfer mechanism
 should_transfer_files   = YES
-transfer_input_files    = fragment.py, wmLHEGEN.sh, SIM.sh, DIGIPremix.sh, HLT.sh, RECO.sh, MiniAODv2.sh, NanoAODv9.sh, customizedNanoAOD.sh, ggH125_012j_NLO_FXFX_HtoBBGamma_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz, chain_RunIISummer20UL18wmLHEGEN-RunIISummer20UL18NanoAODv9.txt
+transfer_input_files    = fragment.py, wmLHEGEN.sh, SIM.sh, DIGIPremix.sh, HLT.sh, RECO.sh, MiniAODv2.sh, NanoAODv9.sh, customizedNanoAOD.sh, chain_RunIISummer20UL18wmLHEGEN-RunIISummer20UL18NanoAODv9.txt
 when_to_transfer_output = ON_EXIT_OR_EVICT
 transfer_output_files   = custom_nano.root, MiniAODv2.root
 transfer_output_remaps  = "MiniAODv2.root=output/miniaod-$(Process).root; custom_nano.root=output/custom_nano-$(Process).root"
