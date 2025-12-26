@@ -25,7 +25,8 @@ cd ../..
 
 
 # cmsDriver command
-cmsDriver.py  --eventcontent PREMIXRAW --customise Configuration/DataProcessing/Utils.addMonitoring --datatier GEN-SIM-DIGI --conditions 106X_upgrade2018_realistic_v11_L1v1 --step DIGI,DATAMIX,L1,DIGI2RAW --procModifiers premix_stage2 --geometry DB:Extended --datamix PreMix --era Run2_2018 --python_filename DIGIPremix_1_cfg.py --fileout file:DIGIPremix.root --filein file:SIM.root --number -1 --number_out -1 --pileup_input "dbs:/Neutrino_E-10_gun/RunIISummer20ULPrePremix-UL18_106X_upgrade2018_realistic_v11_L1v1-v2/PREMIX" --runUnscheduled --no_exec --mc || exit $? ;
+#cmsDriver.py  --eventcontent PREMIXRAW --customise Configuration/DataProcessing/Utils.addMonitoring --datatier GEN-SIM-DIGI --conditions 106X_upgrade2018_realistic_v11_L1v1 --step DIGI,DATAMIX,L1,DIGI2RAW --procModifiers premix_stage2 --geometry DB:Extended --datamix PreMix --era Run2_2018 --python_filename DIGIPremix_1_cfg.py --fileout file:DIGIPremix.root --filein file:SIM.root --number -1 --number_out -1 --pileup_input "dbs:/Neutrino_E-10_gun/RunIISummer20ULPrePremix-UL18_106X_upgrade2018_realistic_v11_L1v1-v2/PREMIX" --runUnscheduled --no_exec --mc || exit $? ;
+cmsDriver.py  --eventcontent PREMIXRAW --customise Configuration/DataProcessing/Utils.addMonitoring --datatier GEN-SIM-DIGI --conditions 106X_upgrade2018_realistic_v11_L1v1 --step DIGI,DATAMIX,L1,DIGI2RAW --procModifiers premix_stage2 --geometry DB:Extended --datamix PreMix --era Run2_2018 --python_filename DIGIPremix_1_cfg.py --fileout file:DIGIPremix.root --filein file:SIM.root --number -1 --number_out -1 --pileup_input "filelist:chain_RunIISummer20UL18wmLHEGEN-RunIISummer20UL18NanoAODv9.txt" --runUnscheduled --no_exec --mc || exit $? ;
 
 # Run generated config
 REPORT_NAME=DIGIPremix_report.xml
