@@ -2,6 +2,7 @@
 
 export HOME=`pwd`
 export EVENTS=$1
+export NODE_HASH=$(hostname | cksum | awk '{print $1}')
 
 # Binds for singularity containers
 # Mount /afs, /eos, /cvmfs, /etc/grid-security for xrootd
@@ -76,7 +77,7 @@ scram b
 cd ../..
 
 # cmsDriver command
-cmsDriver.py Configuration/GenProduction/python/wmLHEGEN-fragment.py --eventcontent RAWSIM,LHE --customise Configuration/DataProcessing/Utils.addMonitoring --datatier GEN,LHE --conditions 106X_upgrade2018_realistic_v4 --beamspot Realistic25ns13TeVEarly2018Collision --customise_commands process.source.numberEventsInLuminosityBlock="cms.untracked.uint32(100)" --step LHE,GEN --geometry DB:Extended --era Run2_2018 --python_filename wmLHEGEN_cfg.py --fileout file:wmLHEGEN.root --number $EVENTS --number_out $EVENTS --no_exec --mc || exit $? ;
+cmsDriver.py Configuration/GenProduction/python/wmLHEGEN-fragment.py --eventcontent RAWSIM,LHE --customise Configuration/DataProcessing/Utils.addMonitoring --datatier GEN,LHE --conditions 106X_upgrade2018_realistic_v4 --beamspot Realistic25ns13TeVEarly2018Collision --customise_commands "process.source.numberEventsInLuminosityBlock=cms.untracked.uint32(100); process.RandomNumberGeneratorService.externalLHEProducer.initialSeed=$((NODE_HASH%1000000+1))" --step LHE,GEN --geometry DB:Extended --era Run2_2018 --python_filename wmLHEGEN_cfg.py --fileout file:wmLHEGEN.root --number $EVENTS --number_out $EVENTS --no_exec --mc || exit $? ;
 
 # Run generated config
 REPORT_NAME=wmLHEGEN_report.xml
