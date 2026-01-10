@@ -1,24 +1,18 @@
 import FWCore.ParameterSet.Config as cms
 
-
-
 externalLHEProducer = cms.EDProducer("ExternalLHEProducer",
-    #args = cms.vstring('/cvmfs/cms.cern.ch/phys_generator/gridpacks/UL/13TeV/madgraph/V5_2.6.5/HtoQQGamma/ggH125_012j_NLO_FXFX_HtoQQGamma_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz'),
-    args = cms.vstring('/afs/cern.ch/user/d/dfu/public/ggH125_012j_NLO_FXFX_HtoTauTauGamma_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz'),
+    args = cms.vstring('/cvmfs/cms.cern.ch/phys_generator/gridpacks/slc6_amd64_gcc630/13TeV/Powheg/V2/gg_H_quark-mass-effects_NNPDF31_13TeV_M125/v1/gg_H_quark-mass-effects_NNPDF31_13TeV_M125.tgz'),
     nEvents = cms.untracked.uint32(5000),
     numberOfParameters = cms.uint32(1),
-    generateConcurrently = cms.untracked.bool(True),
     outputFile = cms.string('cmsgrid_final.lhe'),
+    generateConcurrently = cms.untracked.bool(True),
     scriptName = cms.FileInPath('GeneratorInterface/LHEInterface/data/run_generic_tarball_cvmfs.sh')
 )
 
-#link to cards:
-#https://github.com/cms-sw/genproductions/tree/master/bin/MadGraph5_aMCatNLO/cards/production/2017/13TeV/Higgs/dalitz_no_mll_cut/ggH_012j_NLO_FXFX_HtoMuMuGamma
-
 from Configuration.Generator.Pythia8CommonSettings_cfi import *
 from Configuration.Generator.MCTunes2017.PythiaCP5Settings_cfi import *
+from Configuration.Generator.Pythia8PowhegEmissionVetoSettings_cfi import *
 from Configuration.Generator.PSweightsPythia.PythiaPSweightsSettings_cfi import *
-from Configuration.Generator.Pythia8aMCatNLOSettings_cfi import *
 
 
 generator = cms.EDFilter("Pythia8ConcurrentHadronizerFilter",
@@ -31,26 +25,25 @@ generator = cms.EDFilter("Pythia8ConcurrentHadronizerFilter",
         pythia8CommonSettingsBlock,
         pythia8CP5SettingsBlock,
         pythia8PSweightsSettingsBlock,
-        pythia8aMCatNLOSettingsBlock,
+        pythia8PowhegEmissionVetoSettingsBlock,
         processParameters = cms.vstring(
-            'JetMatching:setMad = off',
-            'JetMatching:scheme = 1',
-            'JetMatching:merge = on',
-            'JetMatching:jetAlgorithm = 2',
-            'JetMatching:etaJetMax = 999.',
-            'JetMatching:coneRadius = 1.',
-            'JetMatching:slowJetPower = 1',
-            'JetMatching:qCut = 30.', #this is the actual merging scale
-            'JetMatching:doFxFx = on',
-            'JetMatching:qCutME = 10.',#this must match the ptj cut in the lhe generation step
-            'JetMatching:nQmatch = 5', #4 corresponds to 4-flavour scheme (no matching of b-quarks), 5 for 5-flavour scheme
-            'JetMatching:nJetMax = 2', #number of partons in born matrix element for highest multiplicity
+            'POWHEG:nFinal = 1', ## Number of final state particles
+                                 ## (BEFORE THE DECAYS) in the LHE
+                                 ## other than emitted extra parton
+            '25:m0 = 125.0',
+            '25:onMode = off',
+            '25:onIfMatch = 23 22',
+            '23:mMin = 50.0',
+            '23:onMode = off',
+            '23:onIfAny = 1 2 3 4 5',
         ),
         parameterSets = cms.vstring('pythia8CommonSettings',
-                                    'pythia8CP5Settings',
-                                    'pythia8PSweightsSettings',
-                                    'pythia8aMCatNLOSettings',
-                                    'processParameters',
-                                    )
+            'pythia8CP5Settings',
+            'pythia8PowhegEmissionVetoSettings',
+            'pythia8PSweightsSettings',
+            'processParameters'
+        )
     )
 )
+
+ProductionFilterSequence = cms.Sequence(generator)
