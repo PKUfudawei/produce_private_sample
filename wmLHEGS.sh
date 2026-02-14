@@ -2,20 +2,20 @@
 
 export HOME=`pwd`
 export EVENTS=$2
-#export NODE_HASH=$(hostname | cksum | awk '{print $1}')
 export SEED=${3:-$RANDOM}
 
 # Binds for singularity containers
 # Mount /afs, /eos, /cvmfs, /etc/grid-security for xrootd
 export APPTAINER_BINDPATH='/afs,/cvmfs,/cvmfs/grid.cern.ch/etc/grid-security:/etc/grid-security,/eos,/etc/pki/ca-trust,/run/user,/var/run/user'
 
-cat <<'EndOfGenScriptFile' > wmLHEGEN_gen_script.sh
+cat <<'EndOfGenScriptFile' > wmLHEGS_gen_script.sh
+#!/bin/bash
 
 echo "Running CMS GEN request script using cms-sw containers. Architecture: el9:x86_64"
-python3 -m venv cms_gen_venv_wmLHEGEN && source ./cms_gen_venv_wmLHEGEN/bin/activate
+python3 -m venv cms_gen_venv_wmLHEGS && source ./cms_gen_venv_wmLHEGS/bin/activate
 
 # Install the PdmV REST client
-pip install git+https://github.com/cms-PdmV/mcm_scripts &> /dev/null
+pip install pdmv-http-client>=2.1.0 &> /dev/null
 
 echo "Packages installed"
 pip freeze
@@ -26,14 +26,14 @@ rm -f request_fragment_check.py
 wget -q https://gitlab.cern.ch/cms-gen/genproductions_scripts/-/raw/master/bin/utils/request_fragment_check.py
 chmod +x request_fragment_check.py
 
-./request_fragment_check.py --bypass_status --prepid wmLHEGEN
+./request_fragment_check.py --bypass_status --prepid wmLHEGS
 
-# End of CMS GEN script file: wmLHEGEN_gen_script.sh
+# End of CMS GEN script file: wmLHEGS_gen_script.sh
 EndOfGenScriptFile
-chmod +x wmLHEGEN_gen_script.sh
+chmod +x wmLHEGS_gen_script.sh
 
 # Run in singularity container
-singularity run --home $PWD:$PWD /cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmssw/el9:x86_64 $(echo $(pwd)/wmLHEGEN_gen_script.sh)
+singularity run --home $PWD:$PWD /cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmssw/el9:x86_64 $(echo $(pwd)/wmLHEGS_gen_script.sh)
 
 GEN_ERR=$?
 if [ $GEN_ERR -ne 0 ]; then
@@ -46,46 +46,64 @@ echo "Running VALIDATION. GEN Request Checking Script returned no errors"
 # GEN Script end
 
 # Download fragment from McM
-#curl -s -k https://cms-pdmv-prod.web.cern.ch/mcm/public/restapi/requests/get_fragment/wmLHEGEN --retry 3 --create-dirs -o Configuration/GenProduction/python/wmLHEGEN-fragment.py
+#curl -s -k https://cms-pdmv-prod.web.cern.ch/mcm/public/restapi/requests/get_fragment/wmLHEGS --retry 3 --create-dirs -o Configuration/GenProduction/python/wmLHEGEN-fragment.py
 mkdir -p Configuration/GenProduction/python/
 cp $1 Configuration/GenProduction/python/wmLHEGEN-fragment.py
 [ -s Configuration/GenProduction/python/wmLHEGEN-fragment.py ] || exit $?;
 
 # Check if fragment contais gridpack path ant that it is in cvmfs
-#if grep -q "gridpacks" Configuration/GenProduction/python/wmLHEGEN-fragment.py; then
-#  if ! grep -q -e "/cvmfs/cms.cern.ch/phys_generator/gridpacks" -e "/cvmfs/cms-griddata.cern.ch/phys_generator/gridpacks_tarball" Configuration/GenProduction/python/wmLHEGEN-fragment.py; then
-#    echo "Gridpack inside fragment is not in cvmfs."
-#    exit -1
-#  fi
-#fi
+if grep -q "gridpacks" Configuration/GenProduction/python/wmLHEGEN-fragment.py; then
+  if ! grep -q -e "/cvmfs/cms.cern.ch/phys_generator/gridpacks" -e "/cvmfs/cms-griddata.cern.ch/phys_generator/gridpacks_tarball" Configuration/GenProduction/python/wmLHEGEN-fragment.py; then
+    echo "Gridpack inside fragment is not in cvmfs."
+    exit -1
+  fi
+fi
 
-# Dump actual test code to a wmLHEGEN_test.sh file that can be run in Singularity
-cat <<'EndOfTestFile' > wmLHEGEN_test.sh
+# Dump actual test code to a wmLHEGS_test.sh file that can be run in Singularity
+cat <<'EndOfTestFile' > wmLHEGS_test.sh
+#!/bin/bash
 
-export SCRAM_ARCH=slc7_amd64_gcc700
+export SCRAM_ARCH=el8_amd64_gcc12
 
 source /cvmfs/cms.cern.ch/cmsset_default.sh
-if [ -r CMSSW_10_6_30_patch1/src ] ; then
-  echo release CMSSW_10_6_30_patch1 already exists
+if [ -r CMSSW_14_0_19/src ] ; then
+  echo release CMSSW_14_0_19 already exists
 else
-  scram p CMSSW CMSSW_10_6_30_patch1
+  scram p CMSSW CMSSW_14_0_19
 fi
-cd CMSSW_10_6_30_patch1/src
+cd CMSSW_14_0_19/src
 eval `scram runtime -sh`
 
 mv ../../Configuration .
 scram b
 cd ../..
 
+# Maximum validation runtime: 28800s
+# Minimum validation runtime: 600s
+# Output events to run for the validation job (from application's setting): 100
+# Event efficiency: Computed using the request efficiency and its error.
+# Event efficiency: `efficiency - (2 * efficiency_error)`: `0.12 - (2 * 0)` = 0.12
+# Input events: `int(output_events / event_efficiency)`: `int(100 / 0.12)` = 833
+# Time per event (s): Computed adding all the time_per_event values on every sequence
+# Time per event (s): 1.62
+# Target input events: 833
+# Target output events: 100
+# This validation will be computed based on the target output events!
+EVENTS=100
+
+# Random seed between 1 and 100 for externalLHEProducer
+SEED=$(($(date +%s) % 100 + 1))
+
+
 # cmsDriver command
-cmsDriver.py Configuration/GenProduction/python/wmLHEGEN-fragment.py --eventcontent RAWSIM,LHE --customise Configuration/DataProcessing/Utils.addMonitoring --datatier GEN,LHE --conditions 106X_upgrade2018_realistic_v4 --beamspot Realistic25ns13TeVEarly2018Collision --customise_commands process.source.numberEventsInLuminosityBlock="cms.untracked.uint32(100)"\\nprocess.RandomNumberGeneratorService.externalLHEProducer.initialSeed="int($SEED)" --step LHE,GEN --geometry DB:Extended --era Run2_2018 --python_filename wmLHEGEN_cfg.py --fileout file:wmLHEGEN.root --number $EVENTS --number_out $EVENTS --no_exec --mc || exit $? ;
+cmsDriver.py Configuration/GenProduction/python/wmLHEGEN-fragment.py --era Run3_2024 --customise Configuration/DataProcessing/Utils.addMonitoring --beamspot DBrealistic --step LHE,GEN,SIM --geometry DB:Extended --conditions 140X_mcRun3_2024_realistic_v26 --customise_commands process.RandomNumberGeneratorService.externalLHEProducer.initialSeed="int(${SEED})"\\nprocess.source.numberEventsInLuminosityBlock="cms.untracked.uint32(833)" --datatier GEN-SIM,LHE --eventcontent RAWSIM,LHE --python_filename wmLHEGS_cfg.py --fileout file:wmLHEGS.root --number 833 --number_out 100 --no_exec --mc || exit $? ;
 
 # Run generated config
-REPORT_NAME=wmLHEGEN_report.xml
+REPORT_NAME=wmLHEGS_report.xml
 # Run the cmsRun
-exec >/dev/null 2>&1; cmsRun -e -j $REPORT_NAME wmLHEGEN_cfg.py || exit $? ;
+cmsRun -e -j $REPORT_NAME wmLHEGS_cfg.py || exit $? ;
 
-# Parse values from wmLHEGEN_report.xml report
+# Parse values from wmLHEGS_report.xml report
 processedEvents=$(grep -Po "(?<=<Metric Name=\"NumberEvents\" Value=\")(.*)(?=\"/>)" $REPORT_NAME | tail -n 1)
 producedEvents=$(grep -Po "(?<=<TotalEvents>)(\d*)(?=</TotalEvents>)" $REPORT_NAME | tail -n 1)
 threads=$(grep -Po "(?<=<Metric Name=\"NumberOfThreads\" Value=\")(.*)(?=\"/>)" $REPORT_NAME | tail -n 1)
@@ -110,7 +128,7 @@ fi
 if [ -z "$processedEvents" ]; then
   processedEvents=$EVENTS
 fi
-echo "Validation report of wmLHEGEN sequence 1/1"
+echo "Validation report of wmLHEGS sequence 1/1"
 echo "Processed events: $processedEvents"
 echo "Produced events: $producedEvents"
 echo "Threads: $threads"
@@ -126,21 +144,20 @@ echo "Time per event: "$(bc -l <<< "scale=4; (1 / $eventThroughput)")" s"
 echo "Filter efficiency percent: "$(bc -l <<< "scale=8; ($producedEvents * 100) / $processedEvents")" %"
 echo "Filter efficiency fraction: "$(bc -l <<< "scale=10; ($producedEvents) / $processedEvents")
 
-# End of wmLHEGEN_test.sh file
+# End of wmLHEGS_test.sh file
 EndOfTestFile
 
 # Make file executable
-sed -i "s/\$EVENTS/$EVENTS/g" wmLHEGEN_test.sh
-chmod +x wmLHEGEN_test.sh
+chmod +x wmLHEGS_test.sh
 
-if [ -e "/cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmssw/el7:amd64" ]; then
-  CONTAINER_NAME="el7:amd64"
-elif [ -e "/cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmssw/el7:x86_64" ]; then
-  CONTAINER_NAME="el7:x86_64"
+if [ -e "/cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmssw/el8:amd64" ]; then
+  CONTAINER_NAME="el8:amd64"
+elif [ -e "/cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmssw/el8:x86_64" ]; then
+  CONTAINER_NAME="el8:x86_64"
 else
-  echo "Could not find amd64 or x86_64 for el7"
+  echo "Could not find amd64 or x86_64 for el8"
   exit 1
 fi
 # Run in singularity container
 export SINGULARITY_CACHEDIR="/tmp/$(whoami)/singularity"
-singularity run --home $PWD:$PWD /cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmssw/$CONTAINER_NAME $(echo $(pwd)/wmLHEGEN_test.sh)
+singularity run --home $PWD:$PWD /cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmssw/$CONTAINER_NAME $(echo $(pwd)/wmLHEGS_test.sh)
