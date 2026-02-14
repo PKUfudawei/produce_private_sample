@@ -1,9 +1,9 @@
 #!/bin/bash
 
 export HOME=`pwd`
-export EVENTS=$1
+export EVENTS=$2
 #export NODE_HASH=$(hostname | cksum | awk '{print $1}')
-export SEED=${2:-$RANDOM}
+export SEED=${3:-$RANDOM}
 
 # Binds for singularity containers
 # Mount /afs, /eos, /cvmfs, /etc/grid-security for xrootd
@@ -48,7 +48,7 @@ echo "Running VALIDATION. GEN Request Checking Script returned no errors"
 # Download fragment from McM
 #curl -s -k https://cms-pdmv-prod.web.cern.ch/mcm/public/restapi/requests/get_fragment/wmLHEGEN --retry 3 --create-dirs -o Configuration/GenProduction/python/wmLHEGEN-fragment.py
 mkdir -p Configuration/GenProduction/python/
-cp ./fragment.py Configuration/GenProduction/python/wmLHEGEN-fragment.py
+cp $1 Configuration/GenProduction/python/wmLHEGEN-fragment.py
 [ -s Configuration/GenProduction/python/wmLHEGEN-fragment.py ] || exit $?;
 
 # Check if fragment contais gridpack path ant that it is in cvmfs
