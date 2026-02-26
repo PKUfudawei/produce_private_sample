@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export PILEUPS=$1
+
 # Binds for singularity containers
 # Mount /afs, /eos, /cvmfs, /etc/grid-security for xrootd
 export APPTAINER_BINDPATH='/afs,/cvmfs,/cvmfs/grid.cern.ch/etc/grid-security:/etc/grid-security,/eos,/etc/pki/ca-trust,/run/user,/var/run/user'
@@ -39,14 +41,15 @@ EVENTS=100
 
 
 # cmsDriver command
-cmsDriver.py  --era Run3_2024 --customise Configuration/DataProcessing/Utils.addMonitoring --procModifiers premix_stage2 --datamix PreMix --step DIGI,DATAMIX,L1,DIGI2RAW,HLT:2024v14 --geometry DB:Extended --conditions 140X_mcRun3_2024_realistic_v26 --datatier GEN-SIM-RAW --eventcontent PREMIXRAW --python_filename DRPremix_1_cfg.py --fileout file:DRPremix.root --filein file:wmLHEGS.root --number -1 --number_out -1 --pileup_input "filelist:$1" --no_exec --mc || exit $? ;
+cmsDriver.py  --era Run3_2024 --customise Configuration/DataProcessing/Utils.addMonitoring --procModifiers premix_stage2 --datamix PreMix --step DIGI,DATAMIX,L1,DIGI2RAW,HLT:2024v14 --geometry DB:Extended --conditions 140X_mcRun3_2024_realistic_v26 --datatier GEN-SIM-RAW --eventcontent PREMIXRAW --python_filename DRPremix_1_cfg.py --fileout file:DRPremix_0.root --filein file:wmLHEGS.root --number -1 --number_out -1 --pileup_input "filelist:$PILEUPS" --no_exec --mc || exit $? ;
+#cmsDriver.py  --era Run3_2024 --customise Configuration/DataProcessing/Utils.addMonitoring --procModifiers premix_stage2 --datamix PreMix --step DIGI,DATAMIX,L1,DIGI2RAW,HLT:2024v14 --geometry DB:Extended --conditions 140X_mcRun3_2024_realistic_v26 --datatier GEN-SIM-RAW --eventcontent PREMIXRAW --python_filename DRPremix_1_cfg.py --fileout file:DRPremix_0.root --filein file:wmLHEGS.root --number -1 --number_out -1 --pileup_input "dbs:/Neutrino_E-10_gun/RunIIISummer24PrePremix-Premixlib2024_140X_mcRun3_2024_realistic_v26-v1/PREMIX" --no_exec --mc || exit $? ;
 
 # Run generated config
-REPORT_NAME=DRPremix_report.xml
+REPORT_NAME=DRPremix_0_report.xml
 # Run the cmsRun
 cmsRun -e -j $REPORT_NAME DRPremix_1_cfg.py || exit $? ;
 
-# Parse values from DRPremix_report.xml report
+# Parse values from DRPremix_0_report.xml report
 processedEvents=$(grep -Po "(?<=<Metric Name=\"NumberEvents\" Value=\")(.*)(?=\"/>)" $REPORT_NAME | tail -n 1)
 producedEvents=$(grep -Po "(?<=<TotalEvents>)(\d*)(?=</TotalEvents>)" $REPORT_NAME | tail -n 1)
 threads=$(grep -Po "(?<=<Metric Name=\"NumberOfThreads\" Value=\")(.*)(?=\"/>)" $REPORT_NAME | tail -n 1)
@@ -88,12 +91,12 @@ echo "Filter efficiency percent: "$(bc -l <<< "scale=8; ($producedEvents * 100) 
 echo "Filter efficiency fraction: "$(bc -l <<< "scale=10; ($producedEvents) / $processedEvents")
 
 # cmsDriver command
-cmsDriver.py  --era Run3_2024 --customise Configuration/DataProcessing/Utils.addMonitoring --step RAW2DIGI,L1Reco,RECO,RECOSIM --geometry DB:Extended --conditions 140X_mcRun3_2024_realistic_v26 --datatier AODSIM --eventcontent AODSIM --python_filename DRPremix_cfg.py --fileout file:DRPremix.root --filein file:DRPremix.root --number 100 --number_out 100 --no_exec --mc || exit $? ;
+cmsDriver.py  --era Run3_2024 --customise Configuration/DataProcessing/Utils.addMonitoring --step RAW2DIGI,L1Reco,RECO,RECOSIM --geometry DB:Extended --conditions 140X_mcRun3_2024_realistic_v26 --datatier AODSIM --eventcontent AODSIM --python_filename DRPremix_2_cfg.py --fileout file:DRPremix.root --filein file:DRPremix_0.root --number 100 --number_out 100 --no_exec --mc || exit $? ;
 
 # Run generated config
 REPORT_NAME=DRPremix_report.xml
 # Run the cmsRun
-cmsRun -e -j $REPORT_NAME DRPremix_cfg.py || exit $? ;
+cmsRun -e -j $REPORT_NAME DRPremix_2_cfg.py || exit $? ;
 
 # Parse values from DRPremix_report.xml report
 processedEvents=$(grep -Po "(?<=<Metric Name=\"NumberEvents\" Value=\")(.*)(?=\"/>)" $REPORT_NAME | tail -n 1)

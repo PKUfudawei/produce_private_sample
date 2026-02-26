@@ -44,12 +44,12 @@ EVENTS=600
 
 
 # cmsDriver command
-cmsDriver.py  --era Run3_2024 --customise Configuration/DataProcessing/Utils.addMonitoring --step PAT --geometry DB:Extended --conditions 150X_mcRun3_2024_realistic_v2 --datatier MINIAODSIM --eventcontent MINIAODSIM1 --python_filename MiniAODv6_cfg.py --fileout file:MiniAODv6.root --filein "dbs:/DYto2Tau-2Jets_Bin-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24DRPremix-140X_mcRun3_2024_realistic_v26-v5/AODSIM" --number -1 --number_out -1 --no_exec --mc || exit $? ;
+cmsDriver.py  --era Run3_2024 --customise Configuration/DataProcessing/Utils.addMonitoring --step PAT --geometry DB:Extended --conditions 150X_mcRun3_2024_realistic_v2 --datatier MINIAODSIM --eventcontent MINIAODSIM1 --python_filename MiniAODv6_1_cfg.py --fileout file:MiniAODv6.root --filein file:DRPremix_0.root --number -1 --number_out -1 --no_exec --mc || exit $? ;
 
 # Run generated config
 REPORT_NAME=MiniAODv6_report.xml
 # Run the cmsRun
-cmsRun -e -j $REPORT_NAME MiniAODv6_cfg.py || exit $? ;
+cmsRun -e -j $REPORT_NAME MiniAODv6_1_cfg.py || exit $? ;
 
 # Parse values from MiniAODv6_report.xml report
 processedEvents=$(grep -Po "(?<=<Metric Name=\"NumberEvents\" Value=\")(.*)(?=\"/>)" $REPORT_NAME | tail -n 1)

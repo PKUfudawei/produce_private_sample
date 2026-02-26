@@ -1,12 +1,6 @@
 #!/bin/bash
 
-source ./wmLHEGEN.sh $1 $2
-source ./SIM.sh
-for i in {1..5}; do
-    source ./DIGIPremix.sh && break
-    sleep 3
-done
-source ./HLT.sh
-source ./RECO.sh
-source ./MiniAODv2.sh
-#source ./customizedNanoAOD.sh
+#cmssw-el7
+./wmLHEGS.sh $1 $2
+#./DRPremix.sh chain_RunIII2024Summer24wmLHEGS-RunIII2024Summer24NanoAOD.txt
+#./MiniAODv6.sh

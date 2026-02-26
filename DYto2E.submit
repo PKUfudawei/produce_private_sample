@@ -1,18 +1,18 @@
 Universe = vanilla 
 +ProjectName = "cms.org.cern"
 +JobFlavour = "testmatch"
-JobBatchName = DYto2Tau_Run3
+JobBatchName = DYto2E_Run3
 
 Executable = ./main.sh
-Arguments = fragment_DYto2Tau.py 10000
+Arguments = fragment_DYto2E.py 10000
 
 should_transfer_files   = YES
-transfer_input_files    = main.sh, fragments/fragment_DYto2Tau.py, wmLHEGS.sh
+transfer_input_files    = main.sh, fragments/fragment_DYto2E.py, wmLHEGS.sh
 when_to_transfer_output = ON_EXIT_OR_EVICT
 #transfer_output_files = ""
 transfer_output_files   = wmLHEGS.root
 transfer_output_remaps  = "wmLHEGS.root=wmLHEGS-$(Process).root"
-output_destination = root://eosuser.cern.ch//eos/user/d/dfu/private_production/DYto2Tau_Run3
+output_destination = root://eosuser.cern.ch//eos/user/d/dfu/private_production/DYto2E_Run3
 MY.XRDCP_CREATE_DIR = True
 
 use_x509userproxy = true
@@ -20,6 +20,6 @@ use_x509userproxy = true
 
 Error = $(Process).err
 Output = $(Process).out
-#Log = $(Cluster).log
+#Log = $(Process).log
 
 Queue 100

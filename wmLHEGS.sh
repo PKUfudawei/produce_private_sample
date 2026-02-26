@@ -1,6 +1,7 @@
 #!/bin/bash
 
 export HOME=`pwd`
+export FRAGMENT=$1
 export EVENTS=$2
 export SEED=${3:-$RANDOM}
 
@@ -15,7 +16,7 @@ echo "Running CMS GEN request script using cms-sw containers. Architecture: el9:
 python3 -m venv cms_gen_venv_wmLHEGS && source ./cms_gen_venv_wmLHEGS/bin/activate
 
 # Install the PdmV REST client
-pip install pdmv-http-client>=2.1.0 &> /dev/null
+pip install "pdmv-http-client>=2.1.0" &> /dev/null
 
 echo "Packages installed"
 pip freeze
@@ -46,14 +47,14 @@ echo "Running VALIDATION. GEN Request Checking Script returned no errors"
 # GEN Script end
 
 # Download fragment from McM
-#curl -s -k https://cms-pdmv-prod.web.cern.ch/mcm/public/restapi/requests/get_fragment/wmLHEGS --retry 3 --create-dirs -o Configuration/GenProduction/python/wmLHEGEN-fragment.py
-mkdir -p Configuration/GenProduction/python/
-cp $1 Configuration/GenProduction/python/wmLHEGEN-fragment.py
-[ -s Configuration/GenProduction/python/wmLHEGEN-fragment.py ] || exit $?;
+#curl -s -k https://cms-pdmv-prod.web.cern.ch/mcm/public/restapi/requests/get_fragment/wmLHEGS --retry 3 --create-dirs -o Configuration/GenProduction/python/wmLHEGS-fragment.py
+mkdir -p Configuration/GenProduction/python
+cp $FRAGMENT Configuration/GenProduction/python/wmLHEGS-fragment.py
+[ -s Configuration/GenProduction/python/wmLHEGS-fragment.py ] || exit $?;
 
 # Check if fragment contais gridpack path ant that it is in cvmfs
-if grep -q "gridpacks" Configuration/GenProduction/python/wmLHEGEN-fragment.py; then
-  if ! grep -q -e "/cvmfs/cms.cern.ch/phys_generator/gridpacks" -e "/cvmfs/cms-griddata.cern.ch/phys_generator/gridpacks_tarball" Configuration/GenProduction/python/wmLHEGEN-fragment.py; then
+if grep -q "gridpacks" Configuration/GenProduction/python/wmLHEGS-fragment.py; then
+  if ! grep -q -e "/cvmfs/cms.cern.ch/phys_generator/gridpacks" -e "/cvmfs/cms-griddata.cern.ch/phys_generator/gridpacks_tarball" Configuration/GenProduction/python/wmLHEGS-fragment.py; then
     echo "Gridpack inside fragment is not in cvmfs."
     exit -1
   fi
@@ -89,19 +90,18 @@ cd ../..
 # Target input events: 833
 # Target output events: 100
 # This validation will be computed based on the target output events!
-EVENTS=100
 
 # Random seed between 1 and 100 for externalLHEProducer
-SEED=$(($(date +%s) % 100 + 1))
+#SEED=$(($(date +%s) % 100 + 1))
 
 
 # cmsDriver command
-cmsDriver.py Configuration/GenProduction/python/wmLHEGEN-fragment.py --era Run3_2024 --customise Configuration/DataProcessing/Utils.addMonitoring --beamspot DBrealistic --step LHE,GEN,SIM --geometry DB:Extended --conditions 140X_mcRun3_2024_realistic_v26 --customise_commands process.RandomNumberGeneratorService.externalLHEProducer.initialSeed="int(${SEED})"\\nprocess.source.numberEventsInLuminosityBlock="cms.untracked.uint32(833)" --datatier GEN-SIM,LHE --eventcontent RAWSIM,LHE --python_filename wmLHEGS_cfg.py --fileout file:wmLHEGS.root --number 833 --number_out 100 --no_exec --mc || exit $? ;
+cmsDriver.py Configuration/GenProduction/python/wmLHEGS-fragment.py --era Run3_2024 --customise Configuration/DataProcessing/Utils.addMonitoring --beamspot DBrealistic --step LHE,GEN,SIM --geometry DB:Extended --conditions 140X_mcRun3_2024_realistic_v26 --customise_commands process.RandomNumberGeneratorService.externalLHEProducer.initialSeed="int(${SEED})"\\nprocess.source.numberEventsInLuminosityBlock="cms.untracked.uint32(833)" --datatier GEN-SIM,LHE --eventcontent RAWSIM,LHE --python_filename wmLHEGS_1_cfg.py --fileout file:wmLHEGS.root --number $EVENTS --number_out $EVENTS --no_exec --mc || exit $? ;
 
 # Run generated config
 REPORT_NAME=wmLHEGS_report.xml
 # Run the cmsRun
-cmsRun -e -j $REPORT_NAME wmLHEGS_cfg.py || exit $? ;
+cmsRun -e -j $REPORT_NAME wmLHEGS_1_cfg.py || exit $? ;
 
 # Parse values from wmLHEGS_report.xml report
 processedEvents=$(grep -Po "(?<=<Metric Name=\"NumberEvents\" Value=\")(.*)(?=\"/>)" $REPORT_NAME | tail -n 1)
